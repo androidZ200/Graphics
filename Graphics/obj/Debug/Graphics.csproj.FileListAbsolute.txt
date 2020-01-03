@@ -7,3 +7,6 @@ E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\bin\Debug\Graphics.pdb
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\гравики_и_производные.FormMain.resources
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.exe
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.pdb
+E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\bin\Debug\FunctionsLib.dll
+E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\bin\Debug\FunctionsLib.pdb
+E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.csproj.CopyComplete

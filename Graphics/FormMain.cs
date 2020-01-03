@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using FunctionsLib;
 
 namespace гравики_и_производные
 {
@@ -23,7 +24,7 @@ namespace гравики_и_производные
             InitializeComponent();
             pictureBox1.MouseWheel += PictureBox1_MouseWheel;
             camera = new Camera(pictureBox1);
-            function = new basic.NaN();
+            function = new FunctionsLib.basic.NaN();
             drawing = new Thread(DrawLoop);
             drawing.Start();
         }
@@ -45,7 +46,7 @@ namespace гравики_и_производные
             catch
             {
                 MessageBox.Show("Не верно введен график.\nКлючевые слова: sin cos tg ln arcsin arccos arctg sgn e pi");
-                function = new basic.NaN();
+                function = new FunctionsLib.basic.NaN();
             }
         }
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -110,6 +111,16 @@ namespace гравики_и_производные
                 lastMouseCoordinate = e.Location;
                 camera.Move(t);
             }
+            var coord = camera.fromCamera(e.Location);
+            toolTip1.SetToolTip(this.pictureBox1, "X = " + coord.X + "\nY = " + coord.Y);
+        }
+        private void pictureBox1_MouseEnter(object sender, EventArgs e)
+        {
+            toolTip1.ShowAlways = true;
+        }
+        private void pictureBox1_MouseLeave(object sender, EventArgs e)
+        {
+            toolTip1.ShowAlways = false;
         }
     }
 

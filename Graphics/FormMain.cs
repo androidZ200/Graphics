@@ -8,60 +8,34 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using FunctionsLib;
+using FunctionsLib.basic;
+using Graphics;
 
 namespace гравики_и_производные
 {
     public partial class FormMain : Form
     {
-        IFunction function;
+        FunctionBuilder<double> builder;
+        Dictionary<FunctionWithParameters<double>, string> functions;
+        SortedSet<string> parametrs;
         Camera camera;
         Thread drawing;
         bool isClickMouse = false;
         Point lastMouseCoordinate;
+        object drawinglock = new object();
 
         public FormMain()
         {
             InitializeComponent();
             pictureBox1.MouseWheel += PictureBox1_MouseWheel;
+            string[] variables = { "x" };
+            builder = new FunctionBuilder<double>(variables);
             camera = new Camera(pictureBox1);
-            function = new FunctionsLib.basic.NaN();
+            functions = new Dictionary<FunctionWithParameters<double>, string>();
+            parametrs = new SortedSet<string>();
             drawing = new Thread(DrawLoop);
             drawing.Start();
-        }
-
-        private void PictureBox1_MouseWheel(object sender, MouseEventArgs e)
-        {
-            camera.Zoom(e.Delta > 0);
-        }
-        private void BuildButton_Click(object sender, EventArgs e)
-        {
-            string text = "";
-            for (int i = 0; i < textBox1.Text.Length; i++)
-                if (textBox1.Text[i] != ' ')
-                    text += textBox1.Text[i];
-            try
-            {
-                function = FunctionBuilder.Create(text);
-            }
-            catch
-            {
-                MessageBox.Show("Не верно введен график.\nКлючевые слова: sin cos tg ln arcsin arccos arctg sgn e pi");
-                function = new FunctionsLib.basic.NaN();
-            }
-        }
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            string ValidCharacters = "Eqwertyuiopasdfghjklzxcvbnm0123456789+-()*/^%, ";
-            string newText = "";
-            string oldText = textBox1.Text;
-            for (int i = 0; i < oldText.Length; i++)
-                for (int j = 0; j < ValidCharacters.Length; j++)
-                    if (oldText[i] == ValidCharacters[j]) newText += oldText[i];
-            textBox1.Text = newText;
-        }
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (drawing != null) drawing.Abort();
+            UpdateComboBox();
         }
 
         private void Draw()
@@ -76,24 +50,78 @@ namespace гравики_и_производные
             g.DrawLine(new Pen(Color.Black), 0, center.Y, pictureBox1.Width, center.Y);
             g.DrawLine(new Pen(Color.Black), center.X, 0, center.X, pictureBox1.Height);
 
-            for (int i = 0; i < pictureBox1.Width; i++)
-            {
-                prev = curr;
-                curr.X = i;
-                curr.Y = camera.inCamera(new PointF(0, (float)function.get(camera.fromCamera(curr).X))).Y;
-                if(!Double.IsNaN(curr.X) && !Double.IsNaN(curr.Y) && !Double.IsNaN(prev.X) && !Double.IsNaN(prev.Y) &&
-                    curr.Y > -pictureBox1.Height && prev.Y > -pictureBox1.Height &&
-                    curr.Y < 2 * pictureBox1.Height && prev.Y < 2 * pictureBox1.Height)
-                    g.DrawLine(line, curr, prev);
-            }
+            lock (drawinglock)
+                foreach (var function in functions)
+                {
+                    for (int i = 0; i < pictureBox1.Width; i++)
+                    {
+                        prev = curr;
+                        curr.X = i;
+                        curr.Y = camera.inCamera(new PointF(0, (float)function.Key.get(camera.fromCamera(curr).X))).Y;
+                        if (!Double.IsNaN(curr.X) && !Double.IsNaN(curr.Y) && !Double.IsNaN(prev.X) && !Double.IsNaN(prev.Y) &&
+                            curr.Y > -pictureBox1.Height && prev.Y > -pictureBox1.Height &&
+                            curr.Y < 2 * pictureBox1.Height && prev.Y < 2 * pictureBox1.Height)
+                            g.DrawLine(line, curr, prev);
+                    }
+                    prev = new PointF(float.NaN, 0);
+                    curr = new PointF(float.NaN, 0);
+                }
             Invoke((Action)(() => { pictureBox1.Image = bmp; }));
         }
         private void DrawLoop()
         {
-            while(true)
+            while (true)
                 Draw();
         }
+        public void ChangetFunc(FunctionWithParameters<double> key, KeyValuePair<FunctionWithParameters<double>, string> newFunc)
+        {
+            lock (drawinglock)
+            {
+                functions.Remove(key);
+                functions.Add(newFunc.Key, newFunc.Value);
+            }
+            UpdateParametrs();
+            UpdateComboBox();
+        }
+        public void DeleteFunc(FunctionWithParameters<double> key)
+        {
+            lock (drawinglock)
+                functions.Remove(key);
+            UpdateParametrs();
+            UpdateComboBox();
+        }
+        public void ChangetParametr(string name, double value)
+        {
+            foreach (var x in functions)
+                foreach (var p in x.Key.parameters)
+                    if (name == p.Key) p.Value.a = value;
+        }
+        private void UpdateComboBox()
+        {
+            comboBox1.Items.Clear();
+            comboBox1.Items.Add("Add");
+            foreach (var x in functions)
+                comboBox1.Items.Add(x.Value);
+            foreach (var x in parametrs)
+                comboBox1.Items.Add(x);
+            comboBox1.SelectedIndex = 0;
+        }
+        private void UpdateParametrs()
+        {
+            parametrs.Clear();
+            foreach (var x in functions)
+                foreach (var p in x.Key.parameters)
+                    parametrs.Add(p.Key);
+        }
 
+        private void PictureBox1_MouseWheel(object sender, MouseEventArgs e)
+        {
+            camera.Zoom(e.Delta > 0);
+        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (drawing != null) drawing.Abort();
+        }
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             isClickMouse = true;
@@ -121,6 +149,30 @@ namespace гравики_и_производные
         private void pictureBox1_MouseLeave(object sender, EventArgs e)
         {
             toolTip1.ShowAlways = false;
+        }
+        private void comboBox1_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedIndex == 0)
+            {
+                FunctionWithParameters<double> f = new FunctionWithParameters<double>(new NaN<double>());
+                lock (drawinglock)
+                    functions.Add(f, "");
+                FormFunc form = new FormFunc(new KeyValuePair<FunctionWithParameters<double>, string>(f, ""), builder, this);
+                form.Show();
+            }
+            else if (comboBox1.SelectedIndex < functions.Count + 1)
+            {
+                var enumer = functions.GetEnumerator();
+                for (int i = 0; i < comboBox1.SelectedIndex; i++) enumer.MoveNext();
+                FormFunc form = new FormFunc(enumer.Current, builder, this);
+                form.Show();
+            }
+            else
+            {
+                int i = comboBox1.SelectedIndex - functions.Count - 1;
+                FormParam form = new FormParam(this, parametrs.ElementAt(i));
+                form.Show();
+            }
         }
     }
 

@@ -10,3 +10,5 @@ E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.pdb
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\bin\Debug\FunctionsLib.dll
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\bin\Debug\FunctionsLib.pdb
 E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.csproj.CopyComplete
+E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.FormFunc.resources
+E:\YandexDisk\YandexDisk\Projects\Graphics\Graphics\obj\Debug\Graphics.FormParam.resources
